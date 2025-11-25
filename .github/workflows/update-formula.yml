@@ -1,0 +1,85 @@
+name: Update Formula
+
+on:
+  repository_dispatch:
+    types: [release]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION="${{ github.event.client_payload.version }}"
+          # Strip 'v' prefix if present
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download checksums and update formula
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          BASE_URL="https://github.com/quietworks/tread/releases/download/v${VERSION}"
+
+          # Download all checksums
+          curl -sfL "${BASE_URL}/tread-darwin-arm64.sha256" -o darwin-arm64.sha256
+          curl -sfL "${BASE_URL}/tread-darwin-x64.sha256" -o darwin-x64.sha256
+          curl -sfL "${BASE_URL}/tread-linux-arm64.sha256" -o linux-arm64.sha256
+          curl -sfL "${BASE_URL}/tread-linux-x64.sha256" -o linux-x64.sha256
+
+          # Extract just the hash (first field)
+          DARWIN_ARM64_SHA=$(cut -d ' ' -f 1 darwin-arm64.sha256)
+          DARWIN_X64_SHA=$(cut -d ' ' -f 1 darwin-x64.sha256)
+          LINUX_ARM64_SHA=$(cut -d ' ' -f 1 linux-arm64.sha256)
+          LINUX_X64_SHA=$(cut -d ' ' -f 1 linux-x64.sha256)
+
+          # Update formula using Python for reliable multi-line handling
+          python3 << EOF
+          import re
+          import os
+
+          version = os.environ['VERSION']
+          shas = {
+              'darwin-arm64': '${DARWIN_ARM64_SHA}',
+              'darwin-x64': '${DARWIN_X64_SHA}',
+              'linux-arm64': '${LINUX_ARM64_SHA}',
+              'linux-x64': '${LINUX_X64_SHA}',
+          }
+
+          with open('Formula/tread.rb', 'r') as f:
+              content = f.read()
+
+          # Update version
+          content = re.sub(r'version "[^"]+"', f'version "{version}"', content)
+
+          # Update each sha256 - match by the URL on the line above
+          for target, sha in shas.items():
+              # Pattern: url line with this target, followed by sha256 line
+              pattern = rf'(url "[^"]*tread-{re.escape(target)}")\n(\s+)sha256 "[^"]+"'
+              replacement = rf'\1\n\2sha256 "{sha}"'
+              content = re.sub(pattern, replacement, content)
+
+          with open('Formula/tread.rb', 'w') as f:
+              f.write(content)
+
+          print(f"Updated formula to v{version}")
+          for target, sha in shas.items():
+              print(f"  {target}: {sha[:16]}...")
+          EOF
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/tread.rb
+          git diff --staged --quiet || git commit -m "Update tread to v${VERSION}"
+          git push
