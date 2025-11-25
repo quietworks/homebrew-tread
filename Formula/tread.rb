@@ -1,28 +1,28 @@
 class Tread < Formula
   desc "A fast, keyboard-driven TUI RSS reader"
   homepage "https://github.com/quietworks/tread"
-  version "0.3.0"
+  version "0.4.0"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://github.com/quietworks/tread/releases/download/v#{version}/tread-darwin-arm64"
-      sha256 "7cb084efa7a89114c86800d27c231336180b09a4da5f2cbe3ec4442a11885593"
+      sha256 "f347cef0fdb8940ff50040dded86835f5c7ba9048094b3b37e7f828050b3bae9"
     end
     on_intel do
       url "https://github.com/quietworks/tread/releases/download/v#{version}/tread-darwin-x64"
-      sha256 "16379d1c37024eccb5a5d65f221d9ea78d0f49ec3c0f8cd09df118fa5f503549"
+      sha256 "2300b58f4752f8b31d5508e53f18e993e9b9637a94f5845b51a2940d48a161a2"
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/quietworks/tread/releases/download/v#{version}/tread-linux-arm64"
-      sha256 "1f189984f8548c17e9d1211ed733844cd9c323405fecb1c6961d7d9932f24b94"
+      sha256 "c15d6a4a9ec52f560152a5ba27424c792e0feda7386fd51e1e2963f140dadd82"
     end
     on_intel do
       url "https://github.com/quietworks/tread/releases/download/v#{version}/tread-linux-x64"
-      sha256 "51f6d1c35103b9c72d3d2d6f3e055650360a0b08f268e429b32e10c17257185d"
+      sha256 "2b733e88f52194a578b69740d0ab606d1ec7360192cc6e59228230926d6d445c"
     end
   end
 
