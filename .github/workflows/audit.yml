@@ -1,0 +1,30 @@
+name: Audit Formula
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'Formula/**'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: homebrew/actions/setup-homebrew@master
+
+      - name: Run brew audit
+        run: |
+          brew audit --strict --online --skip-style Formula/tread.rb
+
+      - name: Run brew style
+        run: |
+          brew style Formula/tread.rb
