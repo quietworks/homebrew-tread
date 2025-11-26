@@ -26,19 +26,27 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          set -e  # Exit on error
           BASE_URL="https://github.com/quietworks/tread/releases/download/v${VERSION}"
 
-          # Download all checksums
-          curl -sfL "${BASE_URL}/tread-darwin-arm64.sha256" -o darwin-arm64.sha256
-          curl -sfL "${BASE_URL}/tread-darwin-x64.sha256" -o darwin-x64.sha256
-          curl -sfL "${BASE_URL}/tread-linux-arm64.sha256" -o linux-arm64.sha256
-          curl -sfL "${BASE_URL}/tread-linux-x64.sha256" -o linux-x64.sha256
+          # Download all checksums with error checking
+          echo "Downloading checksums..."
+          curl -sfL "${BASE_URL}/tread-darwin-arm64.sha256" -o darwin-arm64.sha256 || { echo "Failed to download darwin-arm64 checksum"; exit 1; }
+          curl -sfL "${BASE_URL}/tread-darwin-x64.sha256" -o darwin-x64.sha256 || { echo "Failed to download darwin-x64 checksum"; exit 1; }
+          curl -sfL "${BASE_URL}/tread-linux-arm64.sha256" -o linux-arm64.sha256 || { echo "Failed to download linux-arm64 checksum"; exit 1; }
+          curl -sfL "${BASE_URL}/tread-linux-x64.sha256" -o linux-x64.sha256 || { echo "Failed to download linux-x64 checksum"; exit 1; }
 
           # Extract just the hash (first field)
           DARWIN_ARM64_SHA=$(cut -d ' ' -f 1 darwin-arm64.sha256)
           DARWIN_X64_SHA=$(cut -d ' ' -f 1 darwin-x64.sha256)
           LINUX_ARM64_SHA=$(cut -d ' ' -f 1 linux-arm64.sha256)
           LINUX_X64_SHA=$(cut -d ' ' -f 1 linux-x64.sha256)
+
+          # Validate checksums are not empty
+          [ -n "$DARWIN_ARM64_SHA" ] || { echo "Failed to extract darwin-arm64 checksum"; exit 1; }
+          [ -n "$DARWIN_X64_SHA" ] || { echo "Failed to extract darwin-x64 checksum"; exit 1; }
+          [ -n "$LINUX_ARM64_SHA" ] || { echo "Failed to extract linux-arm64 checksum"; exit 1; }
+          [ -n "$LINUX_X64_SHA" ] || { echo "Failed to extract linux-x64 checksum"; exit 1; }
 
           # Update formula using Python for reliable multi-line handling
           python3 << EOF

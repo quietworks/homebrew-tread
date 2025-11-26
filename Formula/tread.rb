@@ -27,15 +27,11 @@ class Tread < Formula
   end
 
   def install
-    binary_name = if OS.mac?
-      Hardware::CPU.arm? ? "tread-darwin-arm64" : "tread-darwin-x64"
-    else
-      Hardware::CPU.arm? ? "tread-linux-arm64" : "tread-linux-x64"
-    end
-    bin.install binary_name => "tread"
+    bin.install Dir["tread-*"].first => "tread"
   end
 
   test do
     assert_match "tread #{version}", shell_output("#{bin}/tread --version")
+    assert_match "Usage:", shell_output("#{bin}/tread --help")
   end
 end
